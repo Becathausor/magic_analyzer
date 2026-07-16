@@ -1,6 +1,6 @@
 import requests
 import json
-from identifiers import CardIdentifier, dict_to_card_identifier
+from .identifiers import CardIdentifier, dict_to_card_identifier
 from copy import deepcopy
 from pydantic import BaseModel
 
@@ -43,10 +43,15 @@ class DeckContentFetcher:
                                         for identifier in raw_deck_list_identifiers]}
         result = requests.post(request_url, headers=HEADERS, json = json_request)
         self.last_request = deepcopy(raw_deck_list_identifiers), result
-        try:
-            result.raise_for_status()
-        finally:
-            return result
+        result.raise_for_status()
+        return result
+        
+    def fetch_infos_by_decklist(self, decklist: dict[int, str]):
+        identifiers = [dict_to_card_identifier({"name": cardname}) for nb_copies, cardname in decklist.items()]
+        infos = self.fetch_cards_infos(identifiers)
+        json_info = infos.json()
+        print(json_info)
+
         
 if __name__ == "__main__":
     raw_identifiers = [
@@ -65,3 +70,5 @@ if __name__ == "__main__":
     fetcher = DeckContentFetcher()
     fetcher.fetch_cards_infos(identifiers)
     fetcher.get_last_request(do_print=True)
+
+    
