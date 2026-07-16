@@ -1,0 +1,81 @@
+1 Abyssal Harvester
+1 Agna Qel'a
+1 Altar of the Wretched
+1 An Offer You Can't Refuse
+1 Animate Dead
+1 Arcane Denial
+1 Arcane Signet
+1 Archon of Cruelty
+1 Breach the Multiverse
+1 Cabal Ritual
+1 Caustic Bronco
+1 Cemetery Tampering
+1 Clearwater Pathway
+1 Command Tower
+1 Commune with Evil
+1 Cruel Somnophage
+1 Dark Ritual
+1 Dimir Aqueduct
+1 Drowned Catacomb
+1 Ertai Resurrected
+1 Escape Containment
+1 Exotic Orchard
+1 Fact or Fiction
+1 Feed the Swarm
+1 Fell the Profane
+1 Go for the Throat
+1 Grave Researcher
+1 Gray Merchant of Asphodel
+1 Gyruda, Doom of Depths
+1 Harvester of Misery
+11 Island
+1 It That Betrays
+1 It'll Quench Ya!
+1 Jin-Gitaxias, Core Augur
+1 Living Death
+1 Malcolm, Alluring Scoundrel
+1 Metamorphosis Fanatic
+1 Morphic Pool
+1 Mulldrifter
+1 Myriad Landscape
+1 Necromancy
+1 Notion Thief
+1 Obsessive Stitcher
+1 Pongify
+1 Quag Feast
+1 Reality Shift
+1 Reanimate
+1 Shipwreck Marsh
+1 Singularity Rupture
+1 Sink into Stupor
+1 Sire of Seven Deaths
+1 Sire of Stagnation
+1 Sol Ring
+1 Spark Double
+1 Stitch Together
+1 Sunken Hollow
+1 Sunken Ruins
+12 Swamp
+1 Swiftfoot Boots
+1 Syr Konrad, the Grim
+1 Talisman of Dominance
+1 Terror Tide
+1 The Unagi of Kyoshi Island
+1 Thirst for Identity
+1 Three Steps Ahead
+1 Toxic Deluge
+1 Training Grounds
+1 Treasure Cruise
+1 Twilight Diviner
+1 Underground River
+1 Undying Malice
+1 Valgavoth, Terror Eater
+1 Victimize
+1 Vile Entomber
+1 Virtue of Persistence
+1 Visions of Beyond
+1 Winternight Stories
+1 Wonder
+
+Commander:
+1 The Ancient One
