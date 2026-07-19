@@ -1,5 +1,5 @@
-from analyzer.cache import AnalysisCache, deck_cache_key
-from card.decklist import Decklist
+from analyzer import AnalysisCache, deck_cache_key
+from card import Decklist
 
 
 def test_get_returns_none_for_unknown_key(tmp_path):

@@ -1,5 +1,4 @@
-from analyzer.schema import CardTag, DeckSynthesis
-from analyzer.synthesis import synthesize_report
+from analyzer import CardTag, DeckSynthesis, synthesize_report
 
 
 def _synthesis(**overrides):

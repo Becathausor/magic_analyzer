@@ -1,6 +1,6 @@
 from langchain_core.embeddings import Embeddings
 
-from analyzer.rag import build_knowledge_index, get_rules_search_tool
+from analyzer import build_knowledge_index, get_rules_search_tool
 
 
 class FakeEmbeddings(Embeddings):

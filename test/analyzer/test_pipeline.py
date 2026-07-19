@@ -1,7 +1,6 @@
+from analyzer import CardTag, DeckSynthesis
 from analyzer import pipeline as pipeline_module
-from analyzer.schema import CardTag, DeckSynthesis
-from card.card import Card
-from card.decklist import Decklist
+from card import Card, Decklist
 
 
 def _card(name):

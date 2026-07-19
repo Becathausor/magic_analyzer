@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Callable
 
-from card.card_database import CARD_DATABASE
+from card import CARD_DATABASE
 from langchain.agents import create_agent
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.tools import BaseTool, tool

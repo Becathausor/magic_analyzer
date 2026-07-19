@@ -8,3 +8,5 @@ venv/
 data/scryfall_cache.json
 data/analysis_cache.json
 data/.knowledge_index/
+data/decklists/*
+!data/decklists/nightmare_from_the_grave.txt

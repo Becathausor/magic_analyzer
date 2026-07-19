@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from scryfall.cache import ScryfallCache
+from scryfall import ScryfallCache
 
 
 def test_get_returns_none_for_unknown_card(tmp_path):

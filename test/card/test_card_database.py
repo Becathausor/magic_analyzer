@@ -1,5 +1,5 @@
-from card.card_database import CardDatabase
-from scryfall.cache import ScryfallCache
+from card import CardDatabase
+from scryfall import ScryfallCache
 
 
 class FakeResponse:

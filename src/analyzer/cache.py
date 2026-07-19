@@ -7,11 +7,11 @@ analysis - no TTL/invalidation logic needed.
 
 import hashlib
 import json
-import pathlib
+from pathlib import Path
 
-from card.decklist import Decklist
+from card import Decklist
 
-PROJECT_ROOT = pathlib.Path(__file__).parent.parent.parent
+PROJECT_ROOT = Path(__file__).parent.parent.parent
 CACHE_FILE = PROJECT_ROOT / "data" / "analysis_cache.json"
 
 
@@ -24,7 +24,7 @@ def deck_cache_key(deck: Decklist) -> str:
 
 
 class AnalysisCache:
-    def __init__(self, path: pathlib.Path = CACHE_FILE):
+    def __init__(self, path: Path = CACHE_FILE):
         self._path = path
         self._entries: dict[str, dict] = self._load()
 
