@@ -6,3 +6,4 @@ venv/
 .vscode
 *sandbox.py
 data/scryfall_cache.json
+data/.knowledge_index/
