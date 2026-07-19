@@ -25,3 +25,7 @@ Then open http://127.0.0.1:8000/ in your browser to pick a decklist from `data/d
 ```
 pytest
 ```
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
