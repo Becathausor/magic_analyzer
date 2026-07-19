@@ -5,3 +5,4 @@ __pycache__/
 venv/
 .vscode
 *sandbox.py
+data/scryfall_cache.json
