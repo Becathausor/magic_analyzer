@@ -79,6 +79,18 @@ body {
   padding-bottom: 0.25rem;
 }
 
+.category-group {
+  margin-bottom: 0.75rem;
+}
+
+.category-group h3 {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  opacity: 0.55;
+  margin: 0 0 0.2rem;
+}
+
 .card-row {
   padding: 0.2rem 0.35rem;
   border-radius: 4px;

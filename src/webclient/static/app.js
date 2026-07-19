@@ -9,6 +9,10 @@ const ZONE_LABELS = {
   considering_zone: 'Considering',
 };
 const ZONE_ORDER = ['commander_zone', 'main_deck', 'sideboard_zone', 'considering_zone'];
+const CATEGORY_ORDER = [
+  'Creature', 'Planeswalker', 'Battle', 'Instant', 'Sorcery', 'Artifact', 'Enchantment', 'Land', 'Other',
+];
+const LOADING_CATEGORY = 'Chargement…';
 
 const cardCache = new Map();
 let pollTimer = null;
@@ -47,6 +51,11 @@ function renderDeck(deck) {
     const rows = deck[zoneKey];
     if (!rows || rows.length === 0) continue;
 
+    if (zoneKey === 'main_deck') {
+      deckViewEl.appendChild(renderMainDeckZone(rows));
+      continue;
+    }
+
     const section = document.createElement('section');
     section.className = 'zone';
 
@@ -55,19 +64,137 @@ function renderDeck(deck) {
     section.appendChild(heading);
 
     for (const { cardname, quantity } of rows) {
-      const row = document.createElement('div');
-      row.className = 'card-row';
-      row.textContent = `${quantity} ${cardname}`;
-      row.addEventListener('mouseenter', (event) => {
-        positionTooltip(event);
-        handleHoverStart(cardname);
-      });
-      row.addEventListener('mousemove', positionTooltip);
-      row.addEventListener('mouseleave', handleHoverEnd);
-      section.appendChild(row);
+      section.appendChild(createCardRow(cardname, quantity));
     }
 
     deckViewEl.appendChild(section);
+  }
+}
+
+function createCardRow(cardname, quantity) {
+  const row = document.createElement('div');
+  row.className = 'card-row';
+  row.textContent = `${quantity} ${cardname}`;
+  row.addEventListener('mouseenter', (event) => {
+    positionTooltip(event);
+    handleHoverStart(cardname);
+  });
+  row.addEventListener('mousemove', positionTooltip);
+  row.addEventListener('mouseleave', handleHoverEnd);
+  return row;
+}
+
+function renderMainDeckZone(rows) {
+  const section = document.createElement('section');
+  section.className = 'zone';
+
+  const heading = document.createElement('h2');
+  heading.textContent = ZONE_LABELS.main_deck;
+  section.appendChild(heading);
+
+  const body = document.createElement('div');
+  section.appendChild(body);
+
+  const cardState = new Map();
+  for (const { cardname, quantity } of rows) {
+    cardState.set(cardname, { quantity, status: 'pending' });
+  }
+
+  const renderBody = () => {
+    body.innerHTML = '';
+    const buckets = new Map();
+    const pendingRows = [];
+
+    for (const [cardname, state] of cardState) {
+      if (state.status === 'pending') {
+        pendingRows.push({ cardname, quantity: state.quantity });
+        continue;
+      }
+      if (state.status === 'not_found') {
+        addToBucket(buckets, 'Other', cardname, state.quantity);
+        continue;
+      }
+      addToBucket(buckets, state.category, cardname, state.quantity);
+      if (state.opposite_category) {
+        addToBucket(buckets, state.opposite_category, null, state.quantity);
+      }
+    }
+
+    for (const category of CATEGORY_ORDER) {
+      const bucket = buckets.get(category);
+      if (!bucket) continue;
+      body.appendChild(renderCategoryGroup(category, bucket));
+    }
+    if (pendingRows.length > 0) {
+      const pendingCount = pendingRows.reduce((sum, row) => sum + row.quantity, 0);
+      body.appendChild(renderCategoryGroup(LOADING_CATEGORY, { count: pendingCount, cards: pendingRows }));
+    }
+  };
+
+  renderBody();
+
+  for (const { cardname } of rows) {
+    fetchCardStatus(cardname).then((data) => {
+      const state = cardState.get(cardname);
+      if (data.status === 'ready') {
+        state.status = 'ready';
+        state.category = data.category;
+        state.opposite_category = data.opposite_category;
+      } else {
+        state.status = 'not_found';
+      }
+      renderBody();
+    });
+  }
+
+  return section;
+}
+
+function addToBucket(buckets, category, cardname, quantity) {
+  if (!buckets.has(category)) {
+    buckets.set(category, { count: 0, cards: [] });
+  }
+  const bucket = buckets.get(category);
+  bucket.count += quantity;
+  if (cardname) {
+    bucket.cards.push({ cardname, quantity });
+  }
+}
+
+function renderCategoryGroup(category, bucket) {
+  const group = document.createElement('div');
+  group.className = 'category-group';
+
+  const heading = document.createElement('h3');
+  heading.textContent = `${category} (${bucket.count})`;
+  group.appendChild(heading);
+
+  for (const { cardname, quantity } of bucket.cards) {
+    group.appendChild(createCardRow(cardname, quantity));
+  }
+
+  return group;
+}
+
+async function fetchCardStatus(cardname) {
+  const cached = cardCache.get(cardname);
+  if (cached && cached.status !== 'fetching') {
+    return cached;
+  }
+  for (;;) {
+    let body;
+    try {
+      const res = await fetch(`/api/cards/${encodeURIComponent(cardname)}`);
+      body = await res.json();
+    } catch (e) {
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      continue;
+    }
+    cardCache.set(cardname, body);
+    if (body.status !== 'fetching') {
+      return body;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 600));
   }
 }
 

@@ -46,9 +46,17 @@ class CardDatabase:
                 logger.exception("Scryfall fetch failed for batch, will retry on next request")
                 continue
             for raw_card in payload.get("data", []):
-                name = raw_card["name"]
-                self._cards[name] = Card(cardname=name, data=raw_card)
-                self._cache.set(name, raw_card)
+                candidate_names = {raw_card["name"].lower()}
+                candidate_names.update(
+                    face["name"].lower() for face in raw_card.get("card_faces", []) if "name" in face
+                )
+                matched = [name for name in batch if name.lower() in candidate_names]
+                if not matched:
+                    logger.warning("Fetched card did not match any requested name: %s", raw_card.get("name"))
+                    continue
+                for name in matched:
+                    self._cards[name] = Card(cardname=name, data=raw_card)
+                    self._cache.set(name, raw_card)
             for not_found in payload.get("not_found", []):
                 name = not_found.get("name")
                 if name:

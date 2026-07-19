@@ -9,9 +9,10 @@ class FakeCardDatabase:
     def __init__(self):
         self._cards = {}
         self._not_found = set()
+        self.fetch_missing_calls = []
 
     def fetch_missing(self, cardnames):
-        pass
+        self.fetch_missing_calls.append(set(cardnames))
 
     def get(self, cardname):
         return self._cards.get(cardname)
@@ -21,11 +22,16 @@ class FakeCardDatabase:
 
 
 class FakeCard:
-    def __init__(self, image_url):
+    def __init__(self, image_url, category="Land", opposite_category=None):
         self._image_url = image_url
+        self._category = category
+        self._opposite_category = opposite_category
 
     def image_url(self):
         return self._image_url
+
+    def categories(self):
+        return (self._category, self._opposite_category)
 
 
 def setup_app(tmp_path, monkeypatch):
@@ -94,7 +100,7 @@ def test_get_decklist_malformed_content_returns_422(tmp_path, monkeypatch):
 
 def test_get_card_returns_ready_with_image_url(tmp_path, monkeypatch):
     client, fake_db = setup_app(tmp_path, monkeypatch)
-    fake_db._cards["Island"] = FakeCard(image_url="https://example.com/island.jpg")
+    fake_db._cards["Island"] = FakeCard(image_url="https://example.com/island.jpg", category="Land")
 
     response = client.get("/api/cards/Island")
 
@@ -103,7 +109,22 @@ def test_get_card_returns_ready_with_image_url(tmp_path, monkeypatch):
         "status": "ready",
         "cardname": "Island",
         "image_url": "https://example.com/island.jpg",
+        "category": "Land",
+        "opposite_category": None,
     }
+
+
+def test_list_decklists_prefetches_first_five_decks(tmp_path, monkeypatch):
+    client, fake_db = setup_app(tmp_path, monkeypatch)
+    for letter in "abcdefg":
+        (tmp_path / f"{letter}.txt").write_text(f"1 Card{letter.upper()}\n")
+
+    response = client.get("/api/decklists")
+
+    assert response.status_code == 200
+    assert response.json() == [f"{letter}.txt" for letter in "abcdefg"]
+    prefetched = set().union(*fake_db.fetch_missing_calls)
+    assert prefetched == {"CardA", "CardB", "CardC", "CardD", "CardE"}
 
 
 def test_get_card_returns_fetching_when_unknown(tmp_path, monkeypatch):

@@ -9,6 +9,7 @@ from card.card_database import CARD_DATABASE
 from card.decklist_helper import DECKLIST_FOLDER, DecklistBuilder
 
 STATIC_DIR = pathlib.Path(__file__).parent / "static"
+PREFETCH_DECK_COUNT = 5
 
 app = FastAPI()
 
@@ -30,8 +31,23 @@ def _zone_to_rows(zone: dict[str, int]) -> list[CardRow]:
 
 
 @app.get("/api/decklists")
-def list_decklists() -> list[str]:
-    return sorted(p.name for p in DECKLIST_FOLDER.iterdir() if p.is_file())
+def list_decklists(background_tasks: BackgroundTasks) -> list[str]:
+    filenames = sorted(p.name for p in DECKLIST_FOLDER.iterdir() if p.is_file())
+
+    for filename in filenames[:PREFETCH_DECK_COUNT]:
+        try:
+            deck = DecklistBuilder(commander_deck=True).build(filename, fetch_missing=False)
+        except ValueError:
+            continue
+        all_cardnames = {
+            *deck.main_deck,
+            *deck.commander_zone,
+            *deck.sideboard_zone,
+            *deck.considering_zone,
+        }
+        background_tasks.add_task(CARD_DATABASE.fetch_missing, all_cardnames)
+
+    return filenames
 
 
 @app.get("/api/decklists/{filename}")
@@ -65,7 +81,14 @@ def get_decklist(filename: str, background_tasks: BackgroundTasks) -> DecklistRe
 def get_card(cardname: str) -> JSONResponse:
     card = CARD_DATABASE.get(cardname)
     if card is not None:
-        return JSONResponse({"status": "ready", "cardname": cardname, "image_url": card.image_url()})
+        category, opposite_category = card.categories()
+        return JSONResponse({
+            "status": "ready",
+            "cardname": cardname,
+            "image_url": card.image_url(),
+            "category": category,
+            "opposite_category": opposite_category,
+        })
     if CARD_DATABASE.is_not_found(cardname):
         return JSONResponse({"status": "not_found", "cardname": cardname}, status_code=404)
     return JSONResponse({"status": "fetching", "cardname": cardname}, status_code=202)

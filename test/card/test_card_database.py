@@ -64,6 +64,48 @@ def test_fetch_missing_serves_from_disk_cache_without_network(tmp_path):
     assert card.data == {"name": "Island", "id": "abc"}
 
 
+def test_fetch_missing_matches_double_faced_card_by_front_face_name(tmp_path):
+    db = make_database(tmp_path)
+    fetcher = FakeFetcher({
+        "data": [{
+            "name": "Clearwater Pathway // Murkwater Pathway",
+            "id": "abc",
+            "card_faces": [{"name": "Clearwater Pathway"}, {"name": "Murkwater Pathway"}],
+        }],
+        "not_found": [],
+    })
+
+    db.fetch_missing(["Clearwater Pathway"], fetcher=fetcher)
+
+    card = db.get("Clearwater Pathway")
+    assert card is not None
+    assert card.cardname == "Clearwater Pathway"
+    assert card.data["name"] == "Clearwater Pathway // Murkwater Pathway"
+
+
+def test_fetch_missing_serves_double_faced_card_from_disk_cache_without_network(tmp_path):
+    cache_path = tmp_path / "cache.json"
+    first_db = CardDatabase(cache=ScryfallCache(path=cache_path))
+    first_db.fetch_missing(
+        ["Clearwater Pathway"],
+        fetcher=FakeFetcher({
+            "data": [{
+                "name": "Clearwater Pathway // Murkwater Pathway",
+                "id": "abc",
+                "card_faces": [{"name": "Clearwater Pathway"}, {"name": "Murkwater Pathway"}],
+            }],
+            "not_found": [],
+        }),
+    )
+
+    second_db = CardDatabase(cache=ScryfallCache(path=cache_path))
+    second_db.fetch_missing(["Clearwater Pathway"], fetcher=RaisingFetcher())
+
+    card = second_db.get("Clearwater Pathway")
+    assert card is not None
+    assert card.data["name"] == "Clearwater Pathway // Murkwater Pathway"
+
+
 def test_fetch_missing_marks_not_found_cards(tmp_path):
     db = make_database(tmp_path)
     fetcher = FakeFetcher({"data": [], "not_found": [{"name": "Bad Card"}]})
