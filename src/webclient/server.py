@@ -6,11 +6,8 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from analyzer.cache import ANALYSIS_CACHE, deck_cache_key
-from analyzer.pipeline import analyze_decklist
-from card.card_database import CARD_DATABASE
-from card.decklist import Decklist
-from card.decklist_helper import DECKLIST_FOLDER, DecklistBuilder
+from analyzer import ANALYSIS_CACHE, analyze_decklist, deck_cache_key
+from card import CARD_DATABASE, DECKLIST_FOLDER, Decklist, DecklistBuilder
 
 logger = logging.getLogger(__name__)
 

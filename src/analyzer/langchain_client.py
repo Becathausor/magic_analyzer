@@ -1,4 +1,4 @@
-"""LangChain model factories, pointing to DeepInfra like llm.py."""
+"""LangChain model factories, pointing to DeepInfra."""
 
 from __future__ import annotations
 

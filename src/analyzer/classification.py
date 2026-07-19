@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from card.card import Card
+from card import Card
 from langchain_core.language_models.chat_models import BaseChatModel
 
 from .langchain_client import get_chat_model

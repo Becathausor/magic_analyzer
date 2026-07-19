@@ -1,6 +1,5 @@
-from analyzer.classification import classify_cards
-from analyzer.schema import CardTag, CardTagBatch
-from card.card import Card
+from analyzer import CardTag, CardTagBatch, classify_cards
+from card import Card
 
 
 class _FakeStructuredModel:

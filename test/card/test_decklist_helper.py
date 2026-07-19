@@ -1,7 +1,7 @@
 import pytest
 
 from card import decklist_helper as decklist_helper_module
-from card.decklist_helper import DecklistBuilder
+from card import DecklistBuilder
 
 
 def write_decklist(tmp_path, monkeypatch, filename, content):

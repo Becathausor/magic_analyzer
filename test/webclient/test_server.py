@@ -1,10 +1,9 @@
 from fastapi.testclient import TestClient
 
-from analyzer.cache import AnalysisCache
-from analyzer.schema import DeckReport
+from analyzer import AnalysisCache, DeckReport
 from card import decklist_helper as decklist_helper_module
+from webclient import app
 from webclient import server as server_module
-from webclient.server import app
 
 
 class FakeCardDatabase:

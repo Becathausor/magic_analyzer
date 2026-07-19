@@ -1,4 +1,4 @@
-from card.card import Card
+from card import Card
 
 
 def test_image_url_returns_none_without_data():

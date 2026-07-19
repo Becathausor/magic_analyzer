@@ -1,9 +1,8 @@
 import pytest
 import requests
 
+from scryfall import DeckContentFetcher, dict_to_card_identifier
 from scryfall import fetcher as fetcher_module
-from scryfall.fetcher import DeckContentFetcher
-from scryfall.identifiers import dict_to_card_identifier
 
 
 class FakeResponse:

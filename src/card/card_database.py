@@ -2,9 +2,7 @@ import logging
 from typing import Iterable
 
 from .card import Card
-from scryfall.cache import ScryfallCache
-from scryfall.fetcher import DeckContentFetcher
-from scryfall.identifiers import dict_to_card_identifier
+from scryfall import DeckContentFetcher, ScryfallCache, dict_to_card_identifier
 
 logger = logging.getLogger(__name__)
 

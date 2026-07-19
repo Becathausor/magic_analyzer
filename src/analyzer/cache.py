@@ -9,7 +9,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from card.decklist import Decklist
+from card import Decklist
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 CACHE_FILE = PROJECT_ROOT / "data" / "analysis_cache.json"

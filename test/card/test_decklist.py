@@ -1,6 +1,5 @@
+from card import Card, Decklist, count_cards
 from card import decklist as decklist_module
-from card.card import Card
-from card.decklist import Decklist, count_cards
 
 
 def test_is_commander_deck_true_when_100_cards_total():

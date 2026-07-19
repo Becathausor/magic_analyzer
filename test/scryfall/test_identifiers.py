@@ -2,7 +2,7 @@ import uuid
 
 import pytest
 
-from scryfall.identifiers import (
+from scryfall import (
     ByCollectorNumberAndSet,
     ById,
     ByName,
