@@ -15,7 +15,7 @@ class DecklistBuilder:
     def __init__(self, commander_deck: bool = False):
         self._commander_deck = commander_deck
 
-    def build(self, deck_name: str) -> Decklist:
+    def build(self, deck_name: str, fetch_missing: bool = True) -> Decklist:
         with open(DECKLIST_FOLDER / deck_name, "r") as file:
             lines = file.readlines()
 
@@ -47,7 +47,8 @@ class DecklistBuilder:
             *self._deck.sideboard_zone,
             *self._deck.considering_zone,
         }
-        CARD_DATABASE.fetch_missing(all_cardnames)
+        if fetch_missing:
+            CARD_DATABASE.fetch_missing(all_cardnames)
         return self._deck
 
     @staticmethod
