@@ -1,3 +1,4 @@
+import logging
 import pathlib
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException
@@ -5,13 +6,21 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from analyzer.cache import ANALYSIS_CACHE, deck_cache_key
+from analyzer.pipeline import analyze_decklist
 from card.card_database import CARD_DATABASE
+from card.decklist import Decklist
 from card.decklist_helper import DECKLIST_FOLDER, DecklistBuilder
+
+logger = logging.getLogger(__name__)
 
 STATIC_DIR = pathlib.Path(__file__).parent / "static"
 PREFETCH_DECK_COUNT = 5
 
 app = FastAPI()
+
+_analysis_jobs: dict[str, str] = {}
+_analysis_errors: dict[str, str] = {}
 
 
 class CardRow(BaseModel):
@@ -50,16 +59,20 @@ def list_decklists(background_tasks: BackgroundTasks) -> list[str]:
     return filenames
 
 
-@app.get("/api/decklists/{filename}")
-def get_decklist(filename: str, background_tasks: BackgroundTasks) -> DecklistResponse:
+def _load_decklist(filename: str) -> Decklist:
     target = (DECKLIST_FOLDER / filename).resolve()
     if not target.is_relative_to(DECKLIST_FOLDER.resolve()) or not target.is_file():
         raise HTTPException(status_code=404, detail="Decklist not found")
 
     try:
-        deck = DecklistBuilder(commander_deck=True).build(filename, fetch_missing=False)
+        return DecklistBuilder(commander_deck=True).build(filename, fetch_missing=False)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
+
+
+@app.get("/api/decklists/{filename}")
+def get_decklist(filename: str, background_tasks: BackgroundTasks) -> DecklistResponse:
+    deck = _load_decklist(filename)
 
     all_cardnames = {
         *deck.main_deck,
@@ -92,6 +105,51 @@ def get_card(cardname: str) -> JSONResponse:
     if CARD_DATABASE.is_not_found(cardname):
         return JSONResponse({"status": "not_found", "cardname": cardname}, status_code=404)
     return JSONResponse({"status": "fetching", "cardname": cardname}, status_code=202)
+
+
+def _run_analysis(key: str, deck: Decklist) -> None:
+    try:
+        all_cardnames = {*deck.main_deck, *deck.commander_zone}
+        CARD_DATABASE.fetch_missing(all_cardnames)
+        report = analyze_decklist(deck)
+        ANALYSIS_CACHE.set(key, report.model_dump())
+        _analysis_jobs.pop(key, None)
+    except Exception as e:
+        logger.exception("Deck analysis failed for cache key %s", key)
+        _analysis_jobs[key] = "error"
+        _analysis_errors[key] = str(e)
+
+
+@app.get("/api/decklists/{filename}/analysis")
+def get_analysis(filename: str) -> JSONResponse:
+    deck = _load_decklist(filename)
+    cached = ANALYSIS_CACHE.get(deck_cache_key(deck))
+    if cached is not None:
+        return JSONResponse({"status": "ready", "report": cached})
+    return JSONResponse({"status": "not_cached"})
+
+
+@app.post("/api/decklists/{filename}/analysis")
+def trigger_analysis(filename: str, background_tasks: BackgroundTasks) -> JSONResponse:
+    deck = _load_decklist(filename)
+    key = deck_cache_key(deck)
+
+    cached = ANALYSIS_CACHE.get(key)
+    if cached is not None:
+        return JSONResponse({"status": "ready", "report": cached})
+
+    status = _analysis_jobs.get(key)
+    if status == "pending":
+        return JSONResponse({"status": "pending"}, status_code=202)
+    if status == "error":
+        # Consume the error so the next trigger (e.g. a user retry) starts a fresh job.
+        message = _analysis_errors.pop(key, "Analysis failed")
+        _analysis_jobs.pop(key, None)
+        return JSONResponse({"status": "error", "message": message})
+
+    _analysis_jobs[key] = "pending"
+    background_tasks.add_task(_run_analysis, key, deck)
+    return JSONResponse({"status": "pending"}, status_code=202)
 
 
 app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")

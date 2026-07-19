@@ -1,5 +1,6 @@
 const decklistListEl = document.getElementById('decklist-list');
 const deckViewEl = document.getElementById('deck-view');
+const analysisPanelEl = document.getElementById('analysis-panel');
 const tooltipEl = document.getElementById('tooltip');
 
 const ZONE_LABELS = {
@@ -16,6 +17,8 @@ const LOADING_CATEGORY = 'Chargement…';
 
 const cardCache = new Map();
 let pollTimer = null;
+let analysisPollTimer = null;
+const ANALYSIS_POLL_INTERVAL_MS = 1500;
 
 async function loadDecklists() {
   const res = await fetch('/api/decklists');
@@ -36,6 +39,7 @@ async function selectDecklist(filename, li) {
   li.classList.add('active');
 
   deckViewEl.innerHTML = '<p class="placeholder">Loading…</p>';
+  clearTimeout(analysisPollTimer);
   const res = await fetch(`/api/decklists/${encodeURIComponent(filename)}`);
   if (!res.ok) {
     deckViewEl.innerHTML = '<p class="placeholder">Failed to load decklist.</p>';
@@ -43,6 +47,7 @@ async function selectDecklist(filename, li) {
   }
   const deck = await res.json();
   renderDeck(deck);
+  loadAnalysisPanel(filename);
 }
 
 function renderDeck(deck) {
@@ -174,6 +179,125 @@ function renderCategoryGroup(category, bucket) {
   }
 
   return group;
+}
+
+async function loadAnalysisPanel(filename) {
+  clearTimeout(analysisPollTimer);
+  analysisPanelEl.innerHTML = '';
+  analysisPanelEl.appendChild(renderAnalyzeButton(filename));
+
+  const res = await fetch(`/api/decklists/${encodeURIComponent(filename)}/analysis`);
+  if (!res.ok) return;
+  const body = await res.json();
+  if (body.status === 'ready') {
+    renderAnalysis(body.report);
+  }
+}
+
+function renderAnalyzeButton(filename, label = 'Analyze') {
+  const button = document.createElement('button');
+  button.className = 'analyze-btn';
+  button.textContent = label;
+  button.addEventListener('click', () => startAnalysis(filename));
+  return button;
+}
+
+async function startAnalysis(filename) {
+  analysisPanelEl.innerHTML = '<p class="placeholder">Analyzing…</p>';
+  pollAnalysis(filename);
+}
+
+function pollAnalysis(filename) {
+  const step = async () => {
+    let body;
+    try {
+      const res = await fetch(`/api/decklists/${encodeURIComponent(filename)}/analysis`, { method: 'POST' });
+      body = await res.json();
+    } catch (e) {
+      analysisPollTimer = setTimeout(step, ANALYSIS_POLL_INTERVAL_MS);
+      return;
+    }
+    if (body.status === 'ready') {
+      renderAnalysis(body.report);
+    } else if (body.status === 'error') {
+      renderAnalysisError(filename, body.message);
+    } else {
+      analysisPollTimer = setTimeout(step, ANALYSIS_POLL_INTERVAL_MS);
+    }
+  };
+  step();
+}
+
+function renderAnalysisError(filename, message) {
+  analysisPanelEl.innerHTML = '';
+  const error = document.createElement('p');
+  error.className = 'analysis-error';
+  error.textContent = message || 'Analysis failed.';
+  analysisPanelEl.appendChild(error);
+  const retryButton = renderAnalyzeButton(filename, 'Retry');
+  retryButton.classList.add('retry');
+  analysisPanelEl.appendChild(retryButton);
+}
+
+function renderAnalysis(report) {
+  analysisPanelEl.innerHTML = '';
+
+  const container = document.createElement('div');
+  container.className = 'analysis-report';
+
+  const heading = document.createElement('h2');
+  heading.textContent = 'Analysis';
+  container.appendChild(heading);
+
+  container.appendChild(renderAnalysisField('Archetype', report.archetypes.join(', ') || '—'));
+  container.appendChild(renderAnalysisField('Deck goal', report.deck_goal));
+
+  const bracketField = renderAnalysisField('Bracket', `${report.bracket} — ${report.bracket_name}`);
+  const bracketNote = document.createElement('p');
+  bracketNote.className = 'muted';
+  bracketNote.textContent = report.bracket_justification;
+  bracketField.appendChild(bracketNote);
+  container.appendChild(bracketField);
+
+  if (report.win_conditions.length > 0) {
+    container.appendChild(renderAnalysisField('Win conditions', report.win_conditions.join(', ')));
+  }
+
+  const stats = document.createElement('div');
+  stats.className = 'analysis-stats';
+  stats.appendChild(renderAnalysisStat(report.ramp_count, 'Ramp'));
+  stats.appendChild(renderAnalysisStat(report.removal_count, 'Removal'));
+  stats.appendChild(renderAnalysisStat(report.draw_count, 'Draw'));
+  stats.appendChild(renderAnalysisStat(report.average_setup_turn, 'Avg. setup turn'));
+  container.appendChild(stats);
+
+  analysisPanelEl.appendChild(container);
+}
+
+function renderAnalysisField(label, text) {
+  const field = document.createElement('div');
+  field.className = 'analysis-field';
+  const heading = document.createElement('h3');
+  heading.textContent = label;
+  const value = document.createElement('p');
+  value.textContent = text;
+  field.appendChild(heading);
+  field.appendChild(value);
+  return field;
+}
+
+function renderAnalysisStat(value, label) {
+  const stat = document.createElement('div');
+  stat.className = 'analysis-stat';
+  const valueEl = document.createElement('div');
+  valueEl.className = 'value';
+  valueEl.textContent = value;
+  const labelEl = document.createElement('div');
+  labelEl.className = 'label';
+  labelEl.textContent = label;
+  stat.appendChild(valueEl);
+  stat.appendChild(labelEl);
+  return stat;
 }
 
 async function fetchCardStatus(cardname) {

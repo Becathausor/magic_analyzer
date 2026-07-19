@@ -6,3 +6,9 @@ fastapi
 uvicorn[standard]
 pytest
 httpx2
+langchain
+langchain-classic
+langchain-openai
+langchain-community
+langchain-text-splitters
+faiss-cpu
