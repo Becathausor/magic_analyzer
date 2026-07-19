@@ -5,6 +5,7 @@ requests
 fastapi
 uvicorn[standard]
 pytest
+pytest-cov
 httpx2
 langchain
 langchain-classic
